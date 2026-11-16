@@ -1,1 +1,66 @@
-
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FALCON ROYALE BUILDER</title>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<style>
+body{background:#000;color:#fff;font-family:sans-serif;margin:0;padding:15px}
+h1{color:#22c55e;margin:0;font-size:32px} h1 span{color:#facc15}
+.card{background:#0a0a0a;border:1px solid #22c55e33;border-radius:18px;padding:16px;margin-top:15px}
+textarea,input,select{width:100%;background:#111;border:1px solid #333;color:#fff;border-radius:12px;padding:12px;margin:8px 0;font-size:15px;box-sizing:border-box}
+.btns{display:flex;gap:10px}.btn{flex:1;padding:12px;border-radius:12px;border:none;font-weight:bold}
+.b2{background:#fff;color:#000}.b3{background:#22c55e;color:#000}.active{outline:3px solid #facc15}
+.build{background:linear-gradient(90deg,#22c55e,#facc15);color:#000;width:100%;padding:15px;border:none;border-radius:14px;font-size:17px;font-weight:bold;margin-top:10px}
+.preview{border:1px solid #22c55e;border-radius:14px;min-height:400px;margin-top:15px;overflow:hidden;background:#000}
+iframe{width:100%;height:450px;border:none;background:#000}
+.tag{display:inline-block;background:#111;border:1px solid #22c55e;padding:5px 10px;border-radius:20px;font-size:12px;margin:3px}
+.top{color:#888;font-size:13px}
+</style>
+</head>
+<body>
+<h1>🦅 FALCON <span>ROYALE BUILDER</span></h1>
+<p class="top">ابني أي فكرة - بنفس قوة FALCON ROYALE - Babylon.js 3D واقعي - من غير مفتاح - استخدام لا نهائي ♾️</p>
+<div class="card">
+<label>💡 قولي الفكرة - أي فكرة</label>
+<textarea id="idea" rows="3" placeholder="مثال: لعبة فري فاير، خريطة كبيرة، بيوت وشجر، ضرب وزون و Booyah"></textarea>
+<label>نوع البناء:</label>
+<div class="btns"><button class="btn b2 active" id="b2d" onclick="setType('2D')">🎮 2D سريع</button><button class="btn b3" id="b3d" onclick="setType('3D')">🧊 3D واقعي - Babylon</button></div>
+<label>اسم اللعبة:</label>
+<input type="text" id="appName" value="FALCON GAME">
+<label>قوة الجرافيك:</label>
+<select id="power"><option>🔥 أقوى حاجة - Babylon.js واقعي + إضاءة + ظلال + فيزياء</option><option>⚡ متوسط - سريع وخفيف</option></select>
+<div><span class="tag">✨ Babylon.js</span><span class="tag">💡 إضاءة واقعية</span><span class="tag">🌑 ظلال</span><span class="tag">⚡ فيزياء</span><span class="tag">💥 تأثيرات</span><span class="tag">🔊 صوت</span><span class="tag">📦 APK</span><span class="tag">♾️ لا نهائي</span></div>
+<button class="build" onclick="buildApp()">🚀 ابني بنفس قوة FALCON ROYALE</button>
+<p id="status" style="text-align:center;color:#888;font-size:13px">جاهز - اكتب أي فكرة - من غير مفتاح - لا نهائي</p>
+</div>
+<div class="card"><h3 style="margin:0">👀 المعاينة - اللعبة هتشتغل هنا</h3><div class="preview" id="previewBox"><p style="text-align:center;padding-top:150px;color:#777">اللعبة هتظهر هنا بنفس قوة FALCON ROYALE</p></div>
+<div style="display:flex;gap:10px;margin-top:10px"><button class="btn b2" onclick="saveApp()">💾 حفظ</button><button class="btn b3" onclick="downloadApp()">⬇️ تحميل الكود</button><button class="btn b2" onclick="makeAPK()">📦 APK</button></div>
+</div>
+<script>
+let TYPE="3D",lastCode="";
+function setType(t){TYPE=t;document.getElementById("b2d").classList.toggle("active",t==="2D");document.getElementById("b3d").classList.toggle("active",t==="3D");}
+async function buildApp(){
+let idea=document.getElementById("idea").value.trim(),name=document.getElementById("appName").value||"FALCON GAME";
+if(!idea){alert("اكتب الفكرة الأول");return;}
+document.getElementById("status").innerText="⏳ بيبني بنفس قوة FALCON ROYALE... استنى 15 ثانية - Babylon.js";
+let prompt=`You are a professional game developer using Babylon.js. Build ONE complete game in ONE HTML file. Game name: ${name}. Idea: ${idea}. Type: ${TYPE}. REQUIREMENTS - MUST FOLLOW - This is FALCON ROYALE power: Use Babylon.js from https://cdn.babylonjs.com/babylon.js. Realistic 3D: HemisphericLight + DirectionalLight with ShadowGenerator 1024, PBR StandardMaterial with diffuseColor and specularColor, fog, ground 120x120, buildings, trees, player capsule, enemies capsule, UniversalCamera behind player, joystick for mobile with touch, shoot button, health 100, kills counter, zone shrinking, particles, sound with AudioContext. Mobile controls: joystick div + fire button, dir=ltr for controls. If idea is not shooting game, build that idea fully with same Babylon power: map, player, enemies, score, health, win/lose. Arabic RTL, mobile friendly. Return ONLY HTML code, no explanation, no markdown.`;
+try{
+let url="https://text.pollinations.ai/"+encodeURIComponent(prompt)+"?model=openai";
+let res=await fetch(url);let txt=await res.text();
+txt=txt.replace(/```html/g,"").replace(/```/g,"").trim();
+if(!txt.includes("<html")&&!txt.includes("<!DOCTYPE")) throw new Error("no html");
+showApp(txt);document.getElementById("status").innerText="✅ اتبنت بنفس قوة FALCON ROYALE - Babylon.js!";
+}catch(e){
+document.getElementById("status").innerText="❌ النت ضعيف - حاول تاني";
+alert("النت ضعيف، دوس ابني تاني");
+}
+}
+function showApp(code){lastCode=code;let box=document.getElementById("previewBox");box.innerHTML=`<iframe id="appFrame"></iframe>`;let f=document.getElementById("appFrame");let doc=f.contentDocument||f.contentWindow.document;doc.open();doc.write(code);doc.close();}
+function saveApp(){if(!lastCode){alert("ابني الأول");return;}let apps=JSON.parse(localStorage.getItem("falcon_apps")||"[]");apps.unshift({name:document.getElementById("appName").value,code:lastCode,date:new Date().toLocaleDateString("ar-EG")});localStorage.setItem("falcon_apps",JSON.stringify(apps));alert("✅ اتحفظت");}
+function downloadApp(){if(!lastCode){alert("ابني الأول");return;}let blob=new Blob([lastCode],{type:"text/html"});let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="falcon-game.html";a.click();}
+function makeAPK(){if(!lastCode){alert("ابني الأول");return;}alert("1- حمل الكود\n2- ارفعه GitHub\n3- افتح pwabuilder.com والصق اللينك\n4- حمل APK");window.open("https://www.pwabuilder.com","_blank");}
+</script>
+</body>
+</html>
