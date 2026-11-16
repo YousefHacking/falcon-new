@@ -1,1 +1,88 @@
-
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FALCON ROYALE - أقوى لعبة</title>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<style>
+*{box-sizing:border-box} body{margin:0;background:#000;color:#fff;font-family:sans-serif;overflow:hidden}
+#hud{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;padding:10px;pointer-events:none}
+.bar{background:#000a;border:1px solid #22c55e;padding:8px 12px;border-radius:12px;font-weight:bold;font-size:14px}
+#health{color:#22c55e} #kills{color:#facc15} #zone{color:#ef4444}
+#game{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+#controls{position:fixed;bottom:15px;left:0;right:0;z-index:10;display:flex;justify-content:space-between;padding:0 12px;pointer-events:none}
+.joy{width:120px;height:120px;background:#000a;border:2px solid #22c55e;border-radius:50%;position:relative;pointer-events:auto}
+.knob{width:50px;height:50px;background:#22c55e;border-radius:50%;position:absolute;top:35px;left:35px}
+.btns{display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+.btn{width:70px;height:70px;border-radius:50%;border:2px solid #facc15;background:#000a;color:#fff;font-size:22px}
+.btn-fire{background:#ef4444;border-color:#fff;width:85px;height:85px;font-size:30px}
+#start{position:fixed;inset:0;background:#000e;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+#start h1{font-size:48px;color:#22c55e;margin:0} #start h1 span{color:#facc15}
+#start button{background:linear-gradient(90deg,#22c55e,#facc15);border:none;padding:16px 40px;border-radius:16px;font-size:20px;font-weight:bold;margin-top:20px}
+#msg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:15;background:#000e;border:2px solid #facc15;padding:20px 30px;border-radius:18px;font-size:28px;font-weight:bold;display:none;text-align:center}
+</style>
+</head>
+<body>
+<div id="hud"><div class="bar">❤️ هيلث: <span id="health">100</span></div><div class="bar">🎯 قتلت: <span id="kills">0</span></div><div class="bar">🟢 زون: <span id="zone">100</span></div></div>
+<canvas id="game"></canvas>
+<div id="controls">
+<div class="joy" id="joy"><div class="knob" id="knob"></div></div>
+<div class="btns"><button class="btn" onclick="jump()">⬆️</button><button class="btn btn-fire" onclick="shoot()">🔫</button></div>
+</div>
+<div id="start"><h1>🦅 FALCON <span>ROYALE</span></h1><p style="color:#aaa">أقوى لعبة 3D على الموبايل - Babylon.js<br>خريطة + ضرب + زون + Booyah</p><button onclick="startGame()">▶ ابدأ اللعب - Booyah!</button><p style="font-size:12px;color:#888">استخدم الجويستيك للحركة - وزرار 🔫 للضرب</p></div>
+<div id="msg"></div>
+<script>
+let canvas=document.getElementById("game"),engine=new BABYLON.Engine(canvas,true),scene,player,camera,enemies=[],bullets=[],health=100,kills=0,zone=100,playing=false;
+let joyX=0,joyY=0;
+function createScene(){
+scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color3(0.05,0.1,0.15);scene.fog=new BABYLON.Fog(scene,20,90,new BABYLON.Color3(0.05,0.1,0.15));
+let sun=new BABYLON.HemisphericLight("sun",new BABYLON.Vector3(0,1,0),scene);sun.intensity=1.1;
+let dir=new BABYLON.DirectionalLight("dir",new BABYLON.Vector3(-1,-2,-1),scene);dir.intensity=1.2;dir.shadowGenerator=new BABYLON.ShadowGenerator(1024,dir);
+let ground=BABYLON.MeshBuilder.CreateGround("ground",{width:120,height:120},scene);
+let gmat=new BABYLON.StandardMaterial("gmat",scene);gmat.diffuseColor=new BABYLON.Color3(0.2,0.35,0.15);gmat.specularColor=new BABYLON.Color3(0.1,0.1,0.1);ground.material=gmat;ground.receiveShadows=true;
+for(let i=0;i<12;i++){let b=BABYLON.MeshBuilder.CreateBox("house"+i,{width:6,height:4,depth:6},scene);b.position=new BABYLON.Vector3((Math.random()-0.5)*100,2,(Math.random()-0.5)*100);let m=new BABYLON.StandardMaterial("bm"+i,scene);m.diffuseColor=new BABYLON.Color3(0.6,0.5,0.4);m.specularColor=new BABYLON.Color3(0.2,0.2,0.2);b.material=m;dir.shadowGenerator.addShadowCaster(b);b.receiveShadows=true;}
+for(let i=0;i<30;i++){let t=BABYLON.MeshBuilder.CreateCylinder("tree"+i,{height:5,diameterTop:0.5,diameterBottom:0.8},scene);t.position=new BABYLON.Vector3((Math.random()-0.5)*110,2.5,(Math.random()-0.5)*110);let tm=new BABYLON.StandardMaterial("tm"+i,scene);tm.diffuseColor=new BABYLON.Color3(0.3,0.2,0.1);t.material=tm;let leaf=BABYLON.MeshBuilder.CreateSphere("leaf"+i,{diameter:3},scene);leaf.position=new BABYLON.Vector3(t.position.x,6,t.position.z);let lm=new BABYLON.StandardMaterial("lm"+i,scene);lm.diffuseColor=new BABYLON.Color3(0.1,0.5,0.2);leaf.material=lm;dir.shadowGenerator.addShadowCaster(leaf);}
+player=BABYLON.MeshBuilder.CreateCapsule("player",{height:2,radius:0.6},scene);player.position=new BABYLON.Vector3(0,1,0);let pm=new BABYLON.StandardMaterial("pm",scene);pm.diffuseColor=new BABYLON.Color3(0.13,0.77,0.37);pm.emissiveColor=new BABYLON.Color3(0.05,0.2,0.1);player.material=pm;dir.shadowGenerator.addShadowCaster(player);
+enemies=[];for(let i=0;i<6;i++){let e=BABYLON.MeshBuilder.CreateCapsule("enemy"+i,{height:2,radius:0.6},scene);e.position=new BABYLON.Vector3((Math.random()-0.5)*80,1,(Math.random()-0.5)*80);let em=new BABYLON.StandardMaterial("em"+i,scene);em.diffuseColor=new BABYLON.Color3(0.9,0.2,0.2);e.material=em;dir.shadowGenerator.addShadowCaster(e);enemies.push({mesh:e,health:50,speed:0.03+Math.random()*0.02});}
+camera=new BABYLON.UniversalCamera("cam",new BABYLON.Vector3(0,8,-10),scene);camera.setTarget(player.position);camera.attachControl(canvas,true);
+return scene;
+}
+function shoot(){
+if(!playing)return;
+let b=BABYLON.MeshBuilder.CreateSphere("bullet",{diameter:0.3},scene);b.position=player.position.clone();b.position.y+=1;
+let bm=new BABYLON.StandardMaterial("bm",scene);bm.emissiveColor=new BABYLON.Color3(1,0.8,0);b.material=bm;
+let dirV=camera.getForwardRay().direction.clone();bullets.push({mesh:b,dir:dirV,life:60});
+try{let a=new AudioContext();let o=a.createOscillator();o.frequency.value=800;o.connect(a.destination);o.start();o.stop(a.currentTime+0.08);}catch(e){}
+}
+function jump(){if(!playing)return;player.position.y+=1.5;setTimeout(()=>{player.position.y-=1.5;},200);}
+function startGame(){
+document.getElementById("start").style.display="none";health=100;kills=0;zone=100;playing=true;createScene();
+engine.runRenderLoop(()=>{
+if(!playing)return;
+scene.render();
+let speed=0.25;player.position.x+=joyX*speed;player.position.z+=joyY*speed;
+player.position.x=Math.max(-55,Math.min(55,player.position.x));player.position.z=Math.max(-55,Math.min(55,player.position.z));
+camera.position=new BABYLON.Vector3(player.position.x,8,player.position.z-10);camera.setTarget(player.position);
+enemies.forEach((e,idx)=>{
+if(e.health<=0)return;
+let d=player.position.subtract(e.mesh.position);let dist=d.length();
+if(dist>1){d.normalize();e.mesh.position.addInPlace(d.scale(e.speed));}
+if(dist<2){health-=0.2;document.getElementById("health").innerText=Math.max(0,Math.floor(health));if(health<=0){gameOver(false);}}
+});
+bullets=bullets.filter(b=>{b.mesh.position.addInPlace(b.dir.scale(1.2));b.life--;let hit=false;enemies.forEach(en=>{if(en.health>0&&b.mesh.intersectsMesh(en.mesh,false)){en.health-=25;hit=true;if(en.health<=0){en.mesh.dispose();kills++;document.getElementById("kills").innerText=kills;if(kills>=6){gameOver(true);}}}});if(b.life<=0||hit){b.mesh.dispose();return false;}return true;});
+zone-=0.008;document.getElementById("zone").innerText=Math.max(0,Math.floor(zone));
+let distCenter=Math.sqrt(player.position.x*player.position.x+player.position.z*player.position.z);
+if(distCenter>zone*0.6){health-=0.3;document.getElementById("health").innerText=Math.max(0,Math.floor(health));if(health<=0)gameOver(false);}
+});
+}
+function gameOver(win){
+playing=false;let m=document.getElementById("msg");m.style.display="block";
+m.innerHTML=win?"🏆 BOOYAH! 🏆<br>كسبت! قتلت "+kills+"<br><button onclick='location.reload()' style='background:#22c55e;border:none;padding:10px 20px;border-radius:10px;font-weight:bold;margin-top:10px'>العب تاني</button>":"💀 خسرت!<br>قتلت "+kills+"<br><button onclick='location.reload()' style='background:#ef4444;color:#fff;border:none;padding:10px 20px;border-radius:10px;font-weight:bold;margin-top:10px'>حاول تاني</button>";
+}
+let joy=document.getElementById("joy"),knob=document.getElementById("knob"),drag=false;
+joy.addEventListener("touchstart",e=>{drag=true;});joy.addEventListener("touchmove",e=>{if(!drag)return;let r=joy.getBoundingClientRect();let t=e.touches[0];let dx=(t.clientX-(r.left+60))/40,dy=(t.clientY-(r.top+60))/40;dx=Math.max(-1,Math.min(1,dx));dy=Math.max(-1,Math.min(1,dy));joyX=dx;joyY=dy;knob.style.left=(35+dx*25)+"px";knob.style.top=(35+dy*25)+"px";});joy.addEventListener("touchend",()=>{drag=false;joyX=0;joyY=0;knob.style.left="35px";knob.style.top="35px";});
+window.addEventListener("resize",()=>{engine.resize();});
+</script>
+</body>
+</html>
